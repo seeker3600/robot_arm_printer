@@ -6,33 +6,22 @@
 VarSpeedServo s[6];
 int curIdx = 0;
 
-//int constrainS5(int value)
-//{
-//  return constrain(value, 20, 160);
-//}
-
-void constrainS2S3(int& r2, int& r3)
+/*
+s2とs3の角度を制限する。
+r2: s2の角度。
+r3: s3の角度。
+r3current: s3の現在の角度。
+           省略すると、s3の角度は制限せず、s2のみを制限する。
+*/
+void constrainS2S3(int& r2, int& r3, int r3current = -1)
 {
-  bool up2 = false;
+  if(r3current >= 0 && r3 > r3current)
+  {
+    r3 = constrain(r3, 30, 190 - r2);
+  }
 
-  if(r2 < 0)
-    r2 = s[1].read();
-  else
-    up2 = (r2 - s[1].read()) >= 0;
+  r2 = constrain(r2, 30, 190 - r3);
 
-  bool up3 = false;
-  
-  if(r3 < 0)
-    r3 = s[2].read();
-  else
-    up3 = (r3 - s[2].read()) >= 0;
-
-  if(up2)
-    r2 = constrain(r2, 30, 190 - r3);
-  else if(up3)
-    r2 = constrain(r2, 30, 190 - r3);
-    //r3 = constrain(r3, 30, 190 - r2);
-    
   r2 = constrain(r2, 30, 160);
   r3 = constrain(r3, 30, 160);
 }
@@ -81,15 +70,15 @@ void loop() {
 
   if(curIdx == 1)
   {
-    int rot3 = -1;
-    constrainS2S3(rot, rot3);
+    int rot3 = s[2].read();
+    constrainS2S3(rot, rot3, rot3);
     if(rot3 >= 0)
       s[2].write(rot3, MOVE_SPEED, true);
   }
   else if(curIdx == 2)
   {
-    int rot2 = -1;
-    constrainS2S3(rot2, rot);
+    int rot2 = s[1].read();
+    constrainS2S3(rot2, rot, s[2].read());
     if(rot2 >= 0)
       s[1].write(rot2, MOVE_SPEED, true);
   }
