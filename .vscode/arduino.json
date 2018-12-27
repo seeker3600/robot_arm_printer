@@ -1,5 +1,5 @@
 {
-    "sketch": "robot_arm.ino",
+    "sketch": "robot_arm_printer.ino",
     "board": "arduino:avr:uno",
     "port": "COM3",
     "programmer": "AVRISP mkII",
