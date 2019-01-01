@@ -1,8 +1,7 @@
 #include <VarSpeedServo.h>
 #include <FABRIK2D.h>
 
-//#define MOVE_UNIT (5)
-#define MOVE_SPEED (50)
+#define SERVO_SPEED (10)
 
 VarSpeedServo s[6];
 
@@ -29,6 +28,14 @@ void constrainS2S3(int& r2, int& r3, int r3current = -1)
   r3 = constrain(r3, 30, 160);
 }
 
+/*
+FABRIK2Dのモデルをロボットアームのサーボモータの角度に変換する。
+*/
+void convert(int& r2, int& r3)
+{
+  r2 = -r2 - r3;
+}
+
 void setup() {
 
   s[0].attach(2);
@@ -48,8 +55,9 @@ void move(float x, float y)
 {
   fabrik2D.solve(x, y, lengths);
 
-  int r2 = fabrik2D.getAngle(0) * 57296 / 1000;
-  int r3 = fabrik2D.getAngle(1) * 57296 / 1000 + 180;
+  int r3 = fabrik2D.getAngle(0) * 57296 / 1000;
+  int r2 = fabrik2D.getAngle(1) * 57296 / 1000;
+  convert(r2, r3);
   
   Serial.print("X = ");
   Serial.print(x);
@@ -62,18 +70,16 @@ void move(float x, float y)
 
   constrainS2S3(r2, r3, s[2].read());
 
-  s[1].write(r2, MOVE_SPEED, false);
-  s[2].write(r3, MOVE_SPEED, false);
+  s[1].write(r2, SERVO_SPEED, false);
+  s[2].write(r3, SERVO_SPEED, false);
   s[1].wait();
   s[2].wait();
-
-  delay(500);
 }
 
 void loop() {
-  return;
-  move( 50.0f, 50.0f);
-  move(150.0f, 50.0f);
-  move(150.0f,150.0f);
-  move( 50.0f,150.0f);
+  //return;
+  move(80.0f, -40.0f);
+  move(120.0f, -40.0f);
+  move(120.0f, 0.0f);
+  move(80.0f, 0.0f);
 }
