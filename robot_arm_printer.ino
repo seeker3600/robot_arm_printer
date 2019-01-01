@@ -1,6 +1,7 @@
 #include <VarSpeedServo.h>
 #include <FABRIK2D.h>
 
+#define MOVE_UNIT (2.0f)
 #define SERVO_SPEED (10)
 
 VarSpeedServo s[6];
@@ -15,7 +16,7 @@ r3: s3の角度。
 r3current: s3の現在の角度。
            省略すると、s3の角度は制限せず、s2のみを制限する。
 */
-void constrainS2S3(int& r2, int& r3, int r3current = -1)
+void constrainS2S3(float& r2, float& r3, float r3current = -1)
 {
   if(r3current >= 0 && r3 > r3current)
   {
@@ -31,7 +32,7 @@ void constrainS2S3(int& r2, int& r3, int r3current = -1)
 /*
 FABRIK2Dのモデルをロボットアームのサーボモータの角度に変換する。
 */
-void convert(int& r2, int& r3)
+void convert(float& r2, float& r3)
 {
   r2 = -r2 - r3;
 }
@@ -51,12 +52,14 @@ void setup() {
   Serial.begin(9600);
 }
 
+bool wrote = false;
+
 void move(float x, float y)
 {
   fabrik2D.solve(x, y, lengths);
 
-  int r3 = fabrik2D.getAngle(0) * 57296 / 1000;
-  int r2 = fabrik2D.getAngle(1) * 57296 / 1000;
+  float r3 = fabrik2D.getAngle(0) * 57296.0f / 1000.0f;
+  float r2 = fabrik2D.getAngle(1) * 57296.0f / 1000.0f;
   convert(r2, r3);
   
   Serial.print("X = ");
@@ -70,16 +73,36 @@ void move(float x, float y)
 
   constrainS2S3(r2, r3, s[2].read());
 
-  s[1].write(r2, SERVO_SPEED, false);
-  s[2].write(r3, SERVO_SPEED, false);
-  s[1].wait();
-  s[2].wait();
+  VarSpeedServo* s2 = &s[1];
+  VarSpeedServo* s3 = &s[2];
+
+  if(wrote) s2->wait();
+  if(wrote) s3->wait();
+  s2->write(s2->toMicroseconds(r2), SERVO_SPEED, false);
+  s3->write(s3->toMicroseconds(r3), SERVO_SPEED, false);
+  wrote = true;
+}
+
+float y = 0;
+int mode = 0;
+
+void position()
+{
+  switch(mode)
+  {
+    case 0:
+      y -= MOVE_UNIT;
+      if(y == -60.0f) ++mode;
+      break;
+    case 1:
+      y += MOVE_UNIT;
+      if(y == 0.0f) mode = 0;
+      break;
+  }
 }
 
 void loop() {
-  //return;
-  move(80.0f, -40.0f);
-  move(120.0f, -40.0f);
-  move(120.0f, 0.0f);
-  move(80.0f, 0.0f);
+  return;
+  position();
+  move(80.0f, y);
 }
