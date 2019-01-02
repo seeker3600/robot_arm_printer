@@ -6,7 +6,8 @@
 
 VarSpeedServo s[6];
 
-int lengths[] = {120, 150};
+//int lengths[] = {120, 125}; //形状的にはこちらが近い
+int lengths[] = {150, 105}; //構造による補正値
 Fabrik2D fabrik2D(3, lengths);
 
 /*
@@ -61,7 +62,7 @@ void move(float x, float y)
   float r3 = fabrik2D.getAngle(0) * 57296.0f / 1000.0f;
   float r2 = fabrik2D.getAngle(1) * 57296.0f / 1000.0f;
   convert(r2, r3);
-  
+
   Serial.print("X = ");
   Serial.print(x);
   Serial.print(", Y = ");
@@ -92,17 +93,17 @@ void position()
   {
     case 0:
       y -= MOVE_UNIT;
-      if(y == -60.0f) ++mode;
+      if(y == -10.0f) ++mode;
       break;
     case 1:
       y += MOVE_UNIT;
-      if(y == 0.0f) mode = 0;
+      if(y == 80.0f) mode = 0;
       break;
   }
 }
 
 void loop() {
-  return;
+  //return;
   position();
   move(80.0f, y);
 }
