@@ -1,6 +1,26 @@
 #include <VarSpeedServo.h>
 #include <FABRIK2D.h>
 
+// TODO 関節を一部固定できるライブラリ
+// TODO 1度単位でも精度は十分なのか？
+//          writeMillisec使えばええやん！
+
+//int lengths[] = {120, 125}; //形状的にはこちらが近い
+//int lengths[] = {150, 105}; //構造による補正値
+//int lengths[] = {120, 20, 125};
+int lengths[] = {120, 127/*肘短辺20mm、底辺125mmの直線距離(126.59mm)*/};
+Fabrik2D fabrik2D(3, lengths);
+
+#define Y_MIN (-30.0f)
+#define Y_MAX (130.0f)
+#define STEP (80)
+#define S_PER_STEP (0.03125f)
+
+servoSequencePoint s2seq[STEP];
+servoSequencePoint s3seq[STEP];
+
+VarSpeedServo s[6];
+
 /*
 s2とs3の角度を制限する。
 r2: s2の角度。
@@ -28,32 +48,22 @@ FABRIK2Dのモデルをロボットアームのサーボモータの角度に変
 template<typename T>
 void convert(T& r2, T& r3)
 {
-  r2 = -r2 - r3;
+  r2 = -r2 - r3 + 60/*s2の特性*/ - 9/*肘の理不尽構造による直角三角形の角度(9.09度)*/;
 }
-
-//int lengths[] = {120, 125}; //形状的にはこちらが近い
-int lengths[] = {150, 105}; //構造による補正値
-Fabrik2D fabrik2D(3, lengths);
 
 void move(float x, float y, float& r2, float& r3)
 {
-  fabrik2D.solve(x, y, lengths);
+  if(!fabrik2D.solve(x, y, lengths))
+  {
+    Serial.println("ERR!");
+    return;
+  }
 
-  r3 = fabrik2D.getAngle(0) * 57296.0f / 1000.0f;
+  r3 = fabrik2D.getAngle(0) * 57296.0f / 1000.0f;/*rad -> deg*/
   r2 = fabrik2D.getAngle(1) * 57296.0f / 1000.0f;
   convert(r2, r3);
   constrainS2S3(r2, r3);
 }
-
-#define Y_MIN (-10.0f)
-#define Y_MAX ( 70.0f)
-#define STEP (80)
-#define S_PER_STEP (0.03125f)
-
-servoSequencePoint s2seq[STEP];
-servoSequencePoint s3seq[STEP];
-
-servoSequencePoint resetseq[2] = {{90, 10}, {91, 10}};
 
 uint8_t calcSpeed(float r0, float r)
 {
@@ -70,7 +80,7 @@ void initSeq()
 
   for(int n = 0; n < STEP; ++n)
   {
-    move(80.0f, y, r2, r3);
+    move(120.0f, y, r2, r3);
 
     uint8_t s2speed = n > 0 ? calcSpeed(r20, r2) : 10;
     uint8_t s3speed = n > 0 ? calcSpeed(r30, r3) : 10;
@@ -78,19 +88,24 @@ void initSeq()
     s2seq[n] = {(uint8_t)r2, s2speed};
     s3seq[n] = {(uint8_t)r3, s3speed};
 
-    Serial.print(n);
-    Serial.print(": r2 = \t");
-    Serial.print(s2seq[n].position);
-    Serial.print(", r3 = \t");
-    Serial.println(s3seq[n].position);
+    Serial.print(fabrik2D.getX(0));
+    Serial.print("\t");
+    Serial.print(fabrik2D.getY(0));
+    Serial.print("\t");
+    Serial.print(fabrik2D.getX(1));
+    Serial.print("\t");
+    Serial.print(fabrik2D.getY(1));
+    Serial.print("\t");
+    Serial.print(fabrik2D.getX(2));
+    Serial.print("\t");
+    Serial.print(fabrik2D.getY(2));
+    Serial.println();
 
     y += unit;
     r20 = r2;
     r30 = r3;
   }
 }
-
-VarSpeedServo s[6];
 
 void setup() {
   Serial.begin(9600);
