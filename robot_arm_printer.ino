@@ -1,9 +1,6 @@
 #include <VarSpeedServo.h>
 #include <FABRIK2D.h>
 
-// TODO 1度単位でも精度は十分なのか？
-//          writeMillisec使えばええやん！
-
 int lengths[] = {120, 127/*肘短辺20mm、底辺125mmの直線距離(126.59mm)*/};
 Fabrik2D fabrik2D(3, lengths);
 
@@ -12,8 +9,14 @@ Fabrik2D fabrik2D(3, lengths);
 #define STEP (80)
 #define S_PER_STEP (0.03125f)
 
-servoSequencePoint s2seq[STEP];
-servoSequencePoint s3seq[STEP];
+typedef struct 
+{
+  int microsec;
+  uint8_t speed;
+} servoParam;
+
+servoParam s2seq[STEP];
+servoParam s3seq[STEP];
 
 VarSpeedServo s[6];
 
@@ -89,8 +92,8 @@ void initSeq()
     uint8_t s2speed = n > 0 ? calcSpeed(r20, r2) : 10;
     uint8_t s3speed = n > 0 ? calcSpeed(r30, r3) : 10;
 
-    s2seq[n] = {(uint8_t)r2, s2speed};
-    s3seq[n] = {(uint8_t)r3, s3speed};
+    s2seq[n] = {s[1].toMicroseconds(r2), s2speed};
+    s3seq[n] = {s[2].toMicroseconds(r3), s3speed};
 
     Serial.print(fabrik2D.getX(0));
     Serial.print("\t");
@@ -113,8 +116,8 @@ void initSeq()
 
 void reset()
 {
-  s[1].write(s2seq[0].position, 20);
-  s[2].write(s3seq[0].position, 20);
+  s[1].write(s2seq[0].microsec, 20);
+  s[2].write(s3seq[0].microsec, 20);
 
   s[1].wait();
   s[2].wait();
@@ -126,8 +129,8 @@ void play()
 {
   for(int n = 1; n < STEP; ++n)
   {
-    s[1].write(s2seq[n].position, s2seq[n].speed, false);
-    s[2].write(s3seq[n].position, s3seq[n].speed, false);
+    s[1].write(s2seq[n].microsec, s2seq[n].speed, false);
+    s[2].write(s3seq[n].microsec, s3seq[n].speed, false);
 
     while(s[1].isMoving() || s[2].isMoving()) { delay(1); }
   }
