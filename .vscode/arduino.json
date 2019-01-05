@@ -3,5 +3,5 @@
     "board": "arduino:avr:uno",
     "port": "COM3",
     "programmer": "AVRISP mkII",
-    "output": "./ArduinoOutput"
+    "output": "D:\\TEMP\\ArduinoOutput"
 }
