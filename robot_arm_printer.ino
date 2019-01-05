@@ -58,6 +58,9 @@ void convert(T& r2, T& r3)
     ;
 }
 
+/*
+指定した位置にロボットアームの先端を移動するためのモータ角度を計算する。
+*/
 void move(float x, float y, float& r2, float& r3)
 {
   if(!fabrik2D.solve(x, y, lengths))
@@ -72,6 +75,9 @@ void move(float x, float y, float& r2, float& r3)
   constrainS2S3(r2, r3);
 }
 
+/*
+回転速度を計算する。ステップが一定時間で完了するようにする。
+*/
 uint8_t calcSpeed(float r0, float r)
 {
   float sa = r0 - r;
