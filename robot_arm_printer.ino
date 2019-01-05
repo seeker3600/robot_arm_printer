@@ -1,13 +1,9 @@
 #include <VarSpeedServo.h>
 #include <FABRIK2D.h>
 
-// TODO 関節を一部固定できるライブラリ
 // TODO 1度単位でも精度は十分なのか？
 //          writeMillisec使えばええやん！
 
-//int lengths[] = {120, 125}; //形状的にはこちらが近い
-//int lengths[] = {150, 105}; //構造による補正値
-//int lengths[] = {120, 20, 125};
 int lengths[] = {120, 127/*肘短辺20mm、底辺125mmの直線距離(126.59mm)*/};
 Fabrik2D fabrik2D(3, lengths);
 
@@ -48,7 +44,15 @@ FABRIK2Dのモデルをロボットアームのサーボモータの角度に変
 template<typename T>
 void convert(T& r2, T& r3)
 {
-  r2 = -r2 - r3 + 60/*s2の特性*/ - 9/*肘の理不尽構造による直角三角形の角度(9.09度)*/;
+  r2 = -r2 - r3
+    + 30/*s2の取付角度補正*/
+    +  9/*肘の理不尽構造による直角三角形の角度(9.09度)*/
+    +  3/*実測値*/
+    ;
+
+  r3 = r3
+    +  2/*実測値*/
+    ;
 }
 
 void move(float x, float y, float& r2, float& r3)
@@ -107,22 +111,6 @@ void initSeq()
   }
 }
 
-void setup() {
-  Serial.begin(9600);
-
-  s[0].attach(2);
-  s[1].attach(3);
-  s[2].attach(4);
-  s[3].attach(5);
-  s[4].attach(6, 20, 160);
-  s[5].attach(7);
-
-  pinMode(8, INPUT_PULLUP);
-
-  fabrik2D.setTolerance(0.5);
-  initSeq();
-}
-
 void reset()
 {
   s[1].write(s2seq[0].position, 20);
@@ -147,11 +135,28 @@ void play()
   delay(1000);
 }
 
+void setup() {
+  Serial.begin(9600);
+
+  s[0].attach(2);
+  s[1].attach(3);
+  s[2].attach(4);
+  s[3].attach(5);
+  s[4].attach(6, 20, 160);
+  s[5].attach(7);
+
+  pinMode(8, INPUT_PULLUP);
+
+  fabrik2D.setTolerance(0.5);
+  initSeq();
+}
+
 void loop() {
   //return;
 
   reset();
-  play();
+  while(digitalRead(8) == HIGH);
 
+  play();
   while(digitalRead(8) == HIGH);
 }
