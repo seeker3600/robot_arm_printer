@@ -3,12 +3,7 @@
 
 #include <FABRIK2D.h>
 
-typedef struct 
-{
-  int microsec;
-  uint8_t speed;
-} servoParam;
-
+// いずれは隠したい
 extern Fabrik2D fabrik2D;
 
 template<typename T>
@@ -18,7 +13,5 @@ template<typename T>
 void convert(T& r2, T& r3);
 
 bool move(float x, float y, float& r2, float& r3);
-
-uint8_t calcSpeed(float r0, float r, float sec);
 
 #endif

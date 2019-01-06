@@ -55,13 +55,3 @@ bool move(float x, float y, float& r2, float& r3)
 
   return true;
 }
-
-/*
-回転速度を計算する。ステップが一定時間で完了するようにする。
-*/
-uint8_t calcSpeed(float r0, float r, float sec)
-{
-  float sa = r0 - r;
-  int speed = abs(sa) / (2.2809 * sec) - 0.16765;
-  return constrain(speed, 1, 255);
-}
