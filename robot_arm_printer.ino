@@ -25,6 +25,7 @@ typedef struct
   uint8_t speed;
 } servoParam;
 
+servoParam s1seq[STEP];
 servoParam s2seq[STEP];
 servoParam s3seq[STEP];
 
@@ -32,15 +33,21 @@ void initSeq()
 {
   const float unit = (Y_MAX - Y_MIN) / (float)STEP;
   float y = Y_MIN;
-  float r2, r3, r20, r30;
+  float r1, r2, r3, r10, r20, r30;
 
   for(int n = 0; n < STEP; ++n)
   {
-    move(120.0f, y, r2, r3);
+    if(!move(120.0f, y, 10.0f, r1, r2, r3))
+    {
+      Serial.println("NO!");
+      continue;
+    }
 
+    uint8_t s1speed = n > 0 ? calcSpeed(r10, r1, S_PER_STEP) : 10;
     uint8_t s2speed = n > 0 ? calcSpeed(r20, r2, S_PER_STEP) : 10;
     uint8_t s3speed = n > 0 ? calcSpeed(r30, r3, S_PER_STEP) : 10;
 
+    s1seq[n] = {s[0].toMicroseconds(r1), s1speed};
     s2seq[n] = {s[1].toMicroseconds(r2), s2speed};
     s3seq[n] = {s[2].toMicroseconds(r3), s3speed};
 
@@ -58,6 +65,7 @@ void initSeq()
     Serial.println();
 
     y += unit;
+    r10 = r1;
     r20 = r2;
     r30 = r3;
   }
@@ -65,9 +73,11 @@ void initSeq()
 
 void reset()
 {
+  s[0].write(s1seq[0].microsec, 20);
   s[1].write(s2seq[0].microsec, 20);
   s[2].write(s3seq[0].microsec, 20);
 
+  s[0].wait();
   s[1].wait();
   s[2].wait();
 
@@ -78,10 +88,11 @@ void play()
 {
   for(int n = 1; n < STEP; ++n)
   {
+    s[0].write(s1seq[n].microsec, s1seq[n].speed, false);
     s[1].write(s2seq[n].microsec, s2seq[n].speed, false);
     s[2].write(s3seq[n].microsec, s3seq[n].speed, false);
 
-    while(s[1].isMoving() || s[2].isMoving()) { delay(1); }
+    while(s[0].isMoving() || s[1].isMoving() || s[2].isMoving()) { delay(1); }
   }
 
   delay(1000);
