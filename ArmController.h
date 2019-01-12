@@ -3,7 +3,7 @@
 
 #include <VarSpeedServo.h>
 
-#define SERVO_NUM (6)
+#define SERVO_NUM (3)
 #define STEP_COUNT (10)
 
 struct point3d
@@ -44,7 +44,7 @@ private:
   servoParam seqes[SERVO_NUM][STEP_COUNT];
 
 public:
-  ArmController(int pin[SERVO_NUM]);
+  void attach(int pin[SERVO_NUM]);
   
   void play();
 

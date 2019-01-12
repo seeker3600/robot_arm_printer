@@ -64,6 +64,11 @@ bool move(float x, float y, float z, float &r1, float& r2, float& r3)
   convert(r1, r2, r3);
   constrainS2S3(r2, r3);
 
+  //Serial.print(fabrik2D.getX(2));
+  //Serial.print("\t");
+  //Serial.print(fabrik2D.getY(2));
+  //Serial.println();
+
   return true;
 }
 

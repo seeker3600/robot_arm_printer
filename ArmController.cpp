@@ -3,7 +3,7 @@
 #include "ArmController.h"
 #include "SainSmart6Arm.h"
 
-ArmController::ArmController(int pin[SERVO_NUM])
+void ArmController::attach(int pin[SERVO_NUM])
 {
     for (int n = 0; n < SERVO_NUM; ++n)
     {
@@ -42,9 +42,12 @@ bool ArmController::solve(point3d before, point3d after, float second)
     const float sPerStep = second / (float)STEP_COUNT;
 
     point3d current = before;
-    float r1, r2, r3, r10, r20, r30;
+    float r1, r2, r3;
+    float r10 = s[0].read();
+    float r20 = s[1].read();
+    float r30 = s[2].read();
 
-    for (int n = 0; n < STEP_COUNT; ++n)
+    for (int step = 0; step < STEP_COUNT; ++step)
     {
         current += unit;
 
@@ -54,21 +57,13 @@ bool ArmController::solve(point3d before, point3d after, float second)
             return false;
         }
 
-        uint8_t s1speed = n > 0 ? calcSpeed(r10, r1, sPerStep) : 10;
-        uint8_t s2speed = n > 0 ? calcSpeed(r20, r2, sPerStep) : 10;
-        uint8_t s3speed = n > 0 ? calcSpeed(r30, r3, sPerStep) : 10;
+        uint8_t s1speed = calcSpeed(r10, r1, sPerStep);
+        uint8_t s2speed = calcSpeed(r20, r2, sPerStep);
+        uint8_t s3speed = calcSpeed(r30, r3, sPerStep);
 
-        seqes[0][n] = {s[0].toMicroseconds(r1), s1speed};
-        seqes[1][n] = {s[1].toMicroseconds(r2), s2speed};
-        seqes[2][n] = {s[2].toMicroseconds(r3), s3speed};
-        seqes[3][n] = {0, 0};
-        seqes[4][n] = {0, 0};
-        seqes[5][n] = {0, 0};
-
-        //Serial.print(fabrik2D.getX(0));
-        //Serial.print("\t");
-        //Serial.print(fabrik2D.getY(0));
-        //Serial.println();
+        seqes[0][step] = {s[0].toMicroseconds(r1), s1speed};
+        seqes[1][step] = {s[1].toMicroseconds(r2), s2speed};
+        seqes[2][step] = {s[2].toMicroseconds(r3), s3speed};
 
         r10 = r1;
         r20 = r2;

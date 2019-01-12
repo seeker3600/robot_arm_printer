@@ -1,17 +1,16 @@
 
 #include "ArmController.h"
 
-#define Y_MIN (-50.0f)
-#define Y_MAX (50.0f)
-
-int pins[] = {2, 3, 4, 5, 6, 7};
-ArmController arm(pins);
+ArmController arm;
 
 void setup()
 {
   Serial.begin(9600);
 
   pinMode(8, INPUT_PULLUP);
+
+  int pins[] = {2, 3, 4, 5, 6, 7};
+  arm.attach(pins);
 }
 
 void loop()
