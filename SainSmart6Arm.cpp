@@ -1,5 +1,7 @@
 #include "SainSmart6Arm.h"
 
+#include <FABRIK2D.h>
+
 #define radToDeg(__rad) ((__rad) * 57296.0f / 1000.0f)
 
 int lengths[] = {120, 127/*肘短辺20mm、底辺125mmの直線距離(126.59mm)*/};
@@ -52,6 +54,7 @@ void convert(T& r1, T& r2, T& r3)
 */
 bool move(float x, float y, float z, float &r1, float& r2, float& r3)
 {
+  fabrik2D.setTolerance(0.5);
 
   if(!fabrik2D.solve2(x, y, z, lengths)) return false;
 
@@ -62,4 +65,14 @@ bool move(float x, float y, float z, float &r1, float& r2, float& r3)
   constrainS2S3(r2, r3);
 
   return true;
+}
+
+/*
+回転速度を計算する。ステップが一定時間で完了するようにする。
+*/
+uint8_t calcSpeed(float r0, float r, float sec)
+{
+  float sa = r0 - r;
+  int speed = abs(sa) / (2.2809 * sec) - 0.16765;
+  return constrain(speed, 1, 255);
 }

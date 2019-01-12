@@ -1,125 +1,31 @@
 
-#include "SainSmart6Arm.h"
-#include <VarSpeedServo.h>
+#include "ArmController.h"
 
-#define Y_MIN (-30.0f)
-#define Y_MAX (130.0f)
-#define STEP (10)
-#define S_PER_STEP (0.25)
+#define Y_MIN (-50.0f)
+#define Y_MAX (50.0f)
 
-VarSpeedServo s[6];
+int pins[] = {2, 3, 4, 5, 6, 7};
+ArmController arm(pins);
 
-/*
-回転速度を計算する。ステップが一定時間で完了するようにする。
-*/
-uint8_t calcSpeed(float r0, float r, float sec)
+void setup()
 {
-  float sa = r0 - r;
-  int speed = abs(sa) / (2.2809 * sec) - 0.16765;
-  return constrain(speed, 1, 255);
-}
-
-typedef struct 
-{
-  int microsec;
-  uint8_t speed;
-} servoParam;
-
-servoParam s1seq[STEP];
-servoParam s2seq[STEP];
-servoParam s3seq[STEP];
-
-void initSeq()
-{
-  const float unit = (Y_MAX - Y_MIN) / (float)STEP;
-  float y = Y_MIN;
-  float r1, r2, r3, r10, r20, r30;
-
-  for(int n = 0; n < STEP; ++n)
-  {
-    if(!move(120.0f, y, 10.0f, r1, r2, r3))
-    {
-      Serial.println("NO!");
-      continue;
-    }
-
-    uint8_t s1speed = n > 0 ? calcSpeed(r10, r1, S_PER_STEP) : 10;
-    uint8_t s2speed = n > 0 ? calcSpeed(r20, r2, S_PER_STEP) : 10;
-    uint8_t s3speed = n > 0 ? calcSpeed(r30, r3, S_PER_STEP) : 10;
-
-    s1seq[n] = {s[0].toMicroseconds(r1), s1speed};
-    s2seq[n] = {s[1].toMicroseconds(r2), s2speed};
-    s3seq[n] = {s[2].toMicroseconds(r3), s3speed};
-
-    Serial.print(fabrik2D.getX(0));
-    Serial.print("\t");
-    Serial.print(fabrik2D.getY(0));
-    Serial.print("\t");
-    Serial.print(fabrik2D.getX(1));
-    Serial.print("\t");
-    Serial.print(fabrik2D.getY(1));
-    Serial.print("\t");
-    Serial.print(fabrik2D.getX(2));
-    Serial.print("\t");
-    Serial.print(fabrik2D.getY(2));
-    Serial.println();
-
-    y += unit;
-    r10 = r1;
-    r20 = r2;
-    r30 = r3;
-  }
-}
-
-void reset()
-{
-  s[0].write(s1seq[0].microsec, 20);
-  s[1].write(s2seq[0].microsec, 20);
-  s[2].write(s3seq[0].microsec, 20);
-
-  s[0].wait();
-  s[1].wait();
-  s[2].wait();
-
-  delay(1000);
-}
-
-void play()
-{
-  for(int n = 1; n < STEP; ++n)
-  {
-    s[0].write(s1seq[n].microsec, s1seq[n].speed, false);
-    s[1].write(s2seq[n].microsec, s2seq[n].speed, false);
-    s[2].write(s3seq[n].microsec, s3seq[n].speed, false);
-
-    while(s[0].isMoving() || s[1].isMoving() || s[2].isMoving()) { delay(1); }
-  }
-
-  delay(1000);
-}
-
-void setup() {
   Serial.begin(9600);
 
-  s[0].attach(2);
-  s[1].attach(3);
-  s[2].attach(4);
-  s[3].attach(5);
-  s[4].attach(6, 20, 160);
-  s[5].attach(7);
-
   pinMode(8, INPUT_PULLUP);
-
-  fabrik2D.setTolerance(0.5);
-  initSeq();
 }
 
-void loop() {
+void loop()
+{
   //return;
+  point3d near = {100.0, 0.0f, -50.0f};
+  point3d far = {100.0, 0.0f, 50.0f};
 
-  reset();
-  while(digitalRead(8) == HIGH);
+  //TODO 非同期処理を追加
+  arm.solve(near, far, 1.0f);
+  arm.play();
+  while (digitalRead(8) == HIGH){}
 
-  play();
-  while(digitalRead(8) == HIGH);
+  arm.solve(far, near, 1.0f);
+  arm.play();
+  while (digitalRead(8) == HIGH){}
 }
